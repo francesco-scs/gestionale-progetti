@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestionale Progetti</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0f0f0f;--surface:#1a1a1a;--surface2:#242424;--surface3:#2e2e2e;--border:#333;--accent:#c8a96e;--accent2:#8fbc8f;--accent3:#e07070;--accent4:#7ab3d4;--text:#e8e0d5;--text2:#9a9080;--text3:#6a6055;--radius:10px;--shadow:0 4px 24px rgba(0,0,0,.4)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+  .app{display:flex;height:100vh;overflow:hidden}
+  .sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+  .main{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+  .logo{padding:24px 20px 20px;border-bottom:1px solid var(--border)}
+  .logo h1{font-family:'DM Serif Display',serif;font-size:20px;color:var(--accent);letter-spacing:.02em}
+  .logo p{font-size:11px;color:var(--text3);margin-top:2px;letter-spacing:.08em;text-transform:uppercase}
+  .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--accent3);display:inline-block;margin-left:6px;transition:background .4s;vertical-align:middle}
+  .sync-dot.ok{background:var(--accent2)}.sync-dot.syncing{background:var(--accent);animation:pulse 1s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  .nav{padding:12px 8px;flex:1}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all .15s;margin-bottom:2px}
+  .nav-item:hover{background:var(--surface2);color:var(--text)}.nav-item.active{background:rgba(200,169,110,.15);color:var(--accent)}
+  .nav-item svg{width:16px;height:16px;flex-shrink:0}
+  .nav-section{font-size:10px;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;padding:14px 12px 6px}
+  .sidebar-footer{padding:16px;border-top:1px solid var(--border);font-size:11px;color:var(--text3)}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;transition:all .15s}
+  .btn-primary{background:var(--accent);color:#1a1000}.btn-primary:hover{background:#d4b97e}
+  .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.btn-secondary:hover{background:var(--surface3)}
+  .btn-danger{background:rgba(224,112,112,.15);color:var(--accent3);border:1px solid rgba(224,112,112,.3)}.btn-danger:hover{background:rgba(224,112,112,.25)}
+  .btn-sm{padding:6px 12px;font-size:12px}.btn svg{width:14px;height:14px}
+  .page-header{padding:28px 32px 0;display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0;flex-wrap:wrap;gap:12px}
+  .page-title{font-family:'DM Serif Display',serif;font-size:28px;color:var(--text)}
+  .page-subtitle{font-size:13px;color:var(--text3);margin-top:4px}
+  .content{padding:24px 32px 40px;flex:1}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+  .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .card-title{font-size:13px;font-weight:600;color:var(--text2);letter-spacing:.06em;text-transform:uppercase}
+  .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px}
+  .stat-value{font-family:'DM Serif Display',serif;font-size:32px;color:var(--text)}
+  .stat-label{font-size:12px;color:var(--text3);margin-top:4px}
+  .table-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse}
+  th{text-align:left;font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--border)}
+  td{padding:12px 14px;border-bottom:1px solid rgba(51,51,51,.5);vertical-align:middle}
+  tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)}
+  .badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.05em}
+  .badge-green{background:rgba(143,188,143,.15);color:var(--accent2)}.badge-yellow{background:rgba(200,169,110,.15);color:var(--accent)}
+  .badge-red{background:rgba(224,112,112,.15);color:var(--accent3)}.badge-blue{background:rgba(122,179,212,.15);color:var(--accent4)}
+  .badge-gray{background:rgba(154,144,128,.15);color:var(--text2)}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s}
+  .modal-overlay.open{opacity:1;pointer-events:all}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:580px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow);transform:translateY(10px);transition:transform .2s}
+  .modal-overlay.open .modal{transform:translateY(0)}
+  .modal-header{padding:24px 24px 0;display:flex;align-items:center;justify-content:space-between}
+  .modal-title{font-family:'DM Serif Display',serif;font-size:22px}
+  .modal-close{background:var(--surface2);border:none;color:var(--text2);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+  .modal-close:hover{background:var(--surface3);color:var(--text)}
+  .modal-body{padding:20px 24px 24px}
+  .form-group{margin-bottom:16px}.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  label{display:block;font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+  input,select,textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;transition:border-color .15s;outline:none}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+  select option{background:var(--surface2)}textarea{resize:vertical;min-height:80px}
+  .form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+  .toolbar{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+  .search-box{position:relative;flex:1;min-width:200px;max-width:320px}.search-box input{padding-left:36px}
+  .search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text3);width:14px;height:14px}
+  .priority-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+  .p-alta{background:var(--accent3)}.p-media{background:var(--accent)}.p-bassa{background:var(--accent2)}
+  .progress-bar{background:var(--surface3);border-radius:4px;height:6px;overflow:hidden}
+  .progress-fill{height:100%;border-radius:4px;background:var(--accent);transition:width .3s}
+  .avatar{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+  .tabs{display:flex;gap:4px;margin-bottom:20px;background:var(--surface2);padding:4px;border-radius:10px;width:fit-content}
+  .tab{padding:7px 16px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);transition:all .15s}
+  .tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+  .kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .kanban-col{background:var(--surface2);border-radius:var(--radius);padding:14px;min-height:300px}
+  .kanban-col-header{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+  .kanban-count{background:var(--surface3);color:var(--text2);font-size:11px;padding:2px 8px;border-radius:10px}
+  .kanban-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px;cursor:pointer;transition:all .15s}
+  .kanban-card:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.3)}
+  .kanban-card-title{font-size:13px;font-weight:500;margin-bottom:8px}
+  .kanban-card-meta{font-size:11px;color:var(--text3);display:flex;align-items:center;justify-content:space-between}
+  .note-item{padding:14px;background:var(--surface);border-radius:8px;margin-bottom:10px;border-left:3px solid var(--accent)}
+  .note-header{display:flex;justify-content:space-between;margin-bottom:8px}
+  .note-author{font-size:12px;font-weight:600;color:var(--accent)}.note-date{font-size:11px;color:var(--text3)}
+  .note-text{font-size:13px;line-height:1.6;color:var(--text2)}
+  .scadenza-warning{background:rgba(224,112,112,.08);border:1px solid rgba(224,112,112,.25);border-radius:var(--radius);padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px}
+  .empty-state{text-align:center;padding:60px 20px;color:var(--text3)}
+  .empty-state svg{width:48px;height:48px;margin-bottom:16px;opacity:.3}
+  .empty-state p{font-size:15px;margin-bottom:6px;color:var(--text2)}
+  .detail-header{background:linear-gradient(135deg,var(--surface),var(--surface2));border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+  .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .detail-item label{display:block;font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+  .detail-item span{font-size:14px;color:var(--text)}
+  .back-btn{display:inline-flex;align-items:center;gap:6px;color:var(--text3);font-size:13px;cursor:pointer;margin-bottom:20px;transition:color .15s}
+  .back-btn:hover{color:var(--accent)}
+  #loading-screen{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .5s}
+  #loading-screen.hidden{opacity:0;pointer-events:none}
+  .spinner{width:36px;height:36px;border:3px solid var(--surface3);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  ::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px}
+  .av0{background:#5b4fcf}.av1{background:#cf4f7a}.av2{background:#4f9ccf}.av3{background:#cf8a4f}
+  .av4{background:#4fcf7a}.av5{background:#9c4fcf}.av6{background:#cf4f4f}.av7{background:#4fcfcf}
+  @media(max-width:900px){.stats-grid{grid-template-columns:repeat(2,1fr)}.kanban{grid-template-columns:repeat(2,1fr)}.form-row{grid-template-columns:1fr}}
+  @media(max-width:600px){.sidebar{width:60px}.nav-item span,.logo p,.logo h1,.nav-section,.sidebar-footer{display:none}.page-header{padding:16px 16px 0}.content{padding:16px}.stats-grid{grid-template-columns:repeat(2,1fr)}.kanban{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div id="loading-screen">
+  <div style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--accent)">Gestionale Progetti</div>
+  <div class="spinner"></div>
+  <div style="font-size:13px;color:var(--text3)" id="loading-msg">Connessione a Firebase…</div>
+</div>
+
+<div class="app" id="app" style="display:none">
+  <aside class="sidebar">
+    <div class="logo">
+      <h1>Gestionale <span class="sync-dot" id="sync-dot"></span></h1>
+      <p>Project Manager</p>
+    </div>
+    <nav class="nav">
+      <div class="nav-section">Menu</div>
+      <div class="nav-item active" onclick="showPage('dashboard')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span>Dashboard</span>
+      </div>
+      <div class="nav-item" onclick="showPage('clienti')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Clienti</span>
+      </div>
+      <div class="nav-item" onclick="showPage('commesse')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        <span>Commesse</span>
+      </div>
+      <div class="nav-item" onclick="showPage('tasks')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span>Task</span>
+      </div>
+      <div class="nav-section">Altro</div>
+      <div class="nav-item" onclick="showPage('team')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+        <span>Team</span>
+      </div>
+      <div class="nav-item" onclick="showPage('scadenze')">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span>Scadenze</span>
+      </div>
+    </nav>
+    <div class="sidebar-footer">v2.0 · Firebase Sync</div>
+  </aside>
+  <main class="main" id="main-content"></main>
+</div>
+
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore, collection, doc,
+  onSnapshot, addDoc, updateDoc, deleteDoc, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ── CONFIG ────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyD4oBM6Gr4qhyR5H9uMjQSc1_hpN8JtSh8",
+  authDomain: "gestionale-progetti-e99b6.firebaseapp.com",
+  projectId: "gestionale-progetti-e99b6",
+  storageBucket: "gestionale-progetti-e99b6.firebasestorage.app",
+  messagingSenderId: "812870715253",
+  appId: "1:812870715253:web:08d34d953ed2d72bcbb53c"
+};
+const fbApp = initializeApp(firebaseConfig);
+const db    = getFirestore(fbApp);
+
+// ── STATO ─────────────────────────────────────────────────
+const DB = { clienti:[], commesse:[], tasks:[], team:[], note:[] };
+const loaded = { clienti:false, commesse:false, tasks:false, team:false, note:false };
+const dot = () => document.getElementById('sync-dot');
+const setSyncing = () => { if(dot()) dot().className='sync-dot syncing'; };
+const setSynced  = () => { if(dot()) dot().className='sync-dot ok'; };
+
+function checkReady() {
+  if(Object.values(loaded).every(Boolean)) {
+    document.getElementById('loading-screen').classList.add('hidden');
+    document.getElementById('app').style.display = 'flex';
+    showPage('dashboard');
+  }
+}
+
+// ── LISTENERS REAL-TIME ───────────────────────────────────
+function listenCol(col) {
+  onSnapshot(collection(db, col), snap => {
+    DB[col] = snap.docs.map(d => ({ ...d.data(), _id: d.id }));
+    loaded[col] = true;
+    checkReady();
+    if (window._appReady) showPage(window.currentPage, window.detailContext);
+  }, err => {
+    document.getElementById('loading-msg').textContent = 'Errore connessione: ' + err.message;
+  });
+}
+['clienti','commesse','tasks','team','note'].forEach(listenCol);
+
+// ── CRUD ──────────────────────────────────────────────────
+async function addItem(col, data) {
+  setSyncing();
+  data._ts = serverTimestamp();
+  await addDoc(collection(db, col), data);
+  setSynced();
+}
+async function updItem(col, id, data) {
+  setSyncing();
+  data._ts = serverTimestamp();
+  await updateDoc(doc(db, col, id), data);
+  setSynced();
+}
+async function delItem(col, id) {
+  setSyncing();
+  await deleteDoc(doc(db, col, id));
+  setSynced();
+}
+
+// ── HELPERS ───────────────────────────────────────────────
+const gC  = id => DB.clienti.find(c=>c._id===id)||{ragione:'—'};
+const gT  = id => DB.team.find(t=>t._id===id)||{nome:'—'};
+const gCo = id => DB.commesse.find(c=>c._id===id)||{titolo:'—',codice:'—'};
+const fmt = d => { if(!d) return '—'; const p=d.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; };
+const dl  = d => d ? Math.ceil((new Date(d)-new Date())/86400000) : null;
+const avC = n => `av${(n||'').charCodeAt(0)%8}`;
+const ini = n => (n||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+const av  = (n,s='') => `<div class="avatar ${avC(n)}" style="${s}">${ini(n)}</div>`;
+const pBadge = p => { const m={Alta:'badge-red',Media:'badge-yellow',Bassa:'badge-green'}; return `<span class="badge ${m[p]||'badge-gray'}">${p}</span>`; };
+const sBadge = s => { const m={'In corso':'badge-blue','Completato':'badge-green','Pianificato':'badge-gray','Da fare':'badge-yellow','Sospeso':'badge-red','In revisione':'badge-yellow'}; return `<span class="badge ${m[s]||'badge-gray'}">${s}</span>`; };
+const empty = (t,s,c=false) => `<div class="empty-state" style="${c?'padding:20px':''}"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg><p>${t}</p><span>${s}</span></div>`;
+const g   = id => document.getElementById(id)?.value?.trim()||'';
+
+// ── ROUTER ────────────────────────────────────────────────
+window.currentPage   = 'dashboard';
+window.detailContext = null;
+window._appReady     = false;
+
+window.showPage = function(page, ctx=null) {
+  window.currentPage   = page;
+  window.detailContext = ctx;
+  window._appReady     = true;
+  document.querySelectorAll('.nav-item').forEach(n =>
+    n.classList.toggle('active', (n.getAttribute('onclick')||'').includes(`'${page}'`))
+  );
+  const pages = { dashboard:rDash, clienti:rClienti, commesse:rCommesse, tasks:rTasks, team:rTeam, scadenze:rScadenze };
+  const el = document.getElementById('main-content');
+  if (el && pages[page]) el.innerHTML = pages[page](ctx);
+};
+
+// ── DASHBOARD ─────────────────────────────────────────────
+function rDash() {
+  const warn  = DB.tasks.filter(t => t.stato!='Completato' && dl(t.scadenza)!==null && dl(t.scadenza)<=7);
+  const attiv = DB.commesse.filter(c => c.stato=='In corso').length;
+  const open  = DB.tasks.filter(t => t.stato!='Completato').length;
+  return `
+  <div class="page-header">
+    <div><div class="page-title">Dashboard</div><div class="page-subtitle">Sincronizzato in tempo reale su tutti i dispositivi</div></div>
+  </div>
+  <div class="content">
+    ${warn.length ? `<div class="scadenza-warning">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <div><strong style="color:var(--accent3)">${warn.length} scadenz${warn.length===1?'a':'e'} in arrivo</strong> nei prossimi 7 giorni —
+      <span style="cursor:pointer;text-decoration:underline;color:var(--accent)" onclick="showPage('scadenze')">Vedi tutte</span></div>
+    </div>` : ''}
+    <div class="stats-grid">
+      <div class="stat-card"><div style="display:flex;justify-content:space-between"><div><div class="stat-value">${DB.clienti.length}</div><div class="stat-label">Clienti</div></div><div style="width:3px;height:32px;background:var(--accent4);border-radius:2px"></div></div></div>
+      <div class="stat-card"><div style="display:flex;justify-content:space-between"><div><div class="stat-value">${attiv}</div><div class="stat-label">Commesse attive</div></div><div style="width:3px;height:32px;background:var(--accent);border-radius:2px"></div></div></div>
+      <div class="stat-card"><div style="display:flex;justify-content:space-between"><div><div class="stat-value">${open}</div><div class="stat-label">Task aperti</div></div><div style="width:3px;height:32px;background:var(--accent3);border-radius:2px"></div></div></div>
+      <div class="stat-card"><div style="display:flex;justify-content:space-between"><div><div class="stat-value">${DB.team.length}</div><div class="stat-label">Collaboratori</div></div><div style="width:3px;height:32px;background:var(--accent2);border-radius:2px"></div></div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:20px">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Commesse in corso</div><button class="btn btn-secondary btn-sm" onclick="showPage('commesse')">Vedi tutte</button></div>
+        ${DB.commesse.filter(c=>c.stato=='In corso').length ? `
+        <table><thead><tr><th>Titolo</th><th>Cliente</th><th>Progresso</th><th>Scadenza</th></tr></thead><tbody>
+        ${DB.commesse.filter(c=>c.stato=='In corso').map(c=>`
+        <tr style="cursor:pointer" onclick="showPage('commesse','detail-${c._id}')">
+          <td><strong>${c.codice}</strong><br><span style="color:var(--text2);font-size:12px">${c.titolo}</span></td>
+          <td>${gC(c.clienteId).ragione}</td>
+          <td style="min-width:100px"><div class="progress-bar"><div class="progress-fill" style="width:${c.progresso||0}%"></div></div><span style="font-size:11px;color:var(--text3)">${c.progresso||0}%</span></td>
+          <td style="font-size:12px">${fmt(c.dataFine)}</td>
+        </tr>`).join('')}
+        </tbody></table>` : '<div class="empty-state" style="padding:30px"><p>Nessuna commessa attiva</p></div>'}
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Task urgenti</div><button class="btn btn-secondary btn-sm" onclick="showPage('tasks')">Vedi tutti</button></div>
+        ${DB.tasks.filter(t=>t.stato!='Completato').sort((a,b)=>new Date(a.scadenza)-new Date(b.scadenza)).slice(0,6).map(t=>{
+          const d=dl(t.scadenza); const c=d<0?'var(--accent3)':d<=3?'var(--accent)':'var(--text3)';
+          return `<div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+            <span class="priority-dot p-${t.priorita=='Alta'?'alta':t.priorita=='Media'?'media':'bassa'}"></span>
+            <div style="flex:1;min-width:0"><div style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.titolo}</div>
+            <div style="font-size:11px;color:var(--text3)">${gCo(t.commessaId).codice}</div></div>
+            <div style="font-size:11px;color:${c};white-space:nowrap">${d===0?'Oggi':d<0?`${Math.abs(d)}gg scad.`:d===1?'Domani':`${d}gg`}</div>
+          </div>`;
+        }).join('') || '<div class="empty-state" style="padding:30px"><p>Nessun task aperto</p></div>'}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── CLIENTI ───────────────────────────────────────────────
+function rClienti() {
+  return `
+  <div class="page-header">
+    <div><div class="page-title">Clienti</div><div class="page-subtitle">${DB.clienti.length} clienti</div></div>
+    <button class="btn btn-primary" onclick="openModal('cliente')">+ Nuovo cliente</button>
+  </div>
+  <div class="content">
+    <div class="toolbar"><div class="search-box">
+      <svg class="search-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Cerca cliente…" oninput="filterTbl(this,'tbl-cli')">
+    </div></div>
+    <div class="card"><div class="table-wrap">
+      <table id="tbl-cli"><thead><tr><th>Ragione Sociale</th><th>Referente</th><th>Email</th><th>Telefono</th><th>Commesse</th><th>Azioni</th></tr></thead><tbody>
+      ${DB.clienti.map(c=>{
+        const n=DB.commesse.filter(x=>x.clienteId===c._id).length;
+        return `<tr>
+          <td><strong>${c.ragione}</strong>${c.note?`<br><span style="font-size:11px;color:var(--text3)">${c.note}</span>`:''}</td>
+          <td>${c.referente||'—'}</td>
+          <td><a href="mailto:${c.email}" style="color:var(--accent4)">${c.email||'—'}</a></td>
+          <td>${c.telefono||'—'}</td>
+          <td><span class="badge badge-blue">${n}</span></td>
+          <td><div style="display:flex;gap:6px">
+            <button class="btn btn-secondary btn-sm" onclick="openModal('cliente','${c._id}')">✏</button>
+            <button class="btn btn-danger btn-sm" onclick="doDelete('clienti','${c._id}')">✕</button>
+          </div></td>
+        </tr>`;
+      }).join('')}
+      </tbody></table>
+      ${!DB.clienti.length ? empty('Nessun cliente','Aggiungi il primo cliente') : ''}
+    </div></div>
+  </div>`;
+}
+
+// ── COMMESSE ──────────────────────────────────────────────
+function rCommesse(ctx) {
+  if (ctx && ctx.startsWith('detail-')) return rCommessaDetail(ctx.replace('detail-',''));
+  const f = window._filtroC||'Tutti';
+  const stati = ['Tutti','In corso','Pianificato','Completato','Sospeso'];
+  const list  = f==='Tutti' ? DB.commesse : DB.commesse.filter(c=>c.stato===f);
+  return `
+  <div class="page-header">
+    <div><div class="page-title">Commesse</div><div class="page-subtitle">${DB.commesse.length} totali</div></div>
+    <button class="btn btn-primary" onclick="openModal('commessa')">+ Nuova commessa</button>
+  </div>
+  <div class="content">
+    <div class="tabs">${stati.map(s=>`<div class="tab ${f===s?'active':''}" onclick="window._filtroC='${s}';showPage('commesse')">${s}</div>`).join('')}</div>
+    <div class="card"><div class="table-wrap"><table>
+      <thead><tr><th>Codice</th><th>Titolo</th><th>Cliente</th><th>Responsabile</th><th>Stato</th><th>Priorità</th><th>Progresso</th><th>Scadenza</th><th>Azioni</th></tr></thead>
+      <tbody>${list.map(c=>`<tr>
+        <td style="font-weight:600;color:var(--accent)">${c.codice}</td>
+        <td style="cursor:pointer" onclick="showPage('commesse','detail-${c._id}')">${c.titolo}</td>
+        <td>${gC(c.clienteId).ragione}</td>
+        <td>${av(gT(c.responsabileId).nome,'width:22px;height:22px;font-size:10px')} <span style="font-size:12px">${gT(c.responsabileId).nome}</span></td>
+        <td>${sBadge(c.stato)}</td><td>${pBadge(c.priorita)}</td>
+        <td style="min-width:100px"><div class="progress-bar"><div class="progress-fill" style="width:${c.progresso||0}%"></div></div><span style="font-size:10px;color:var(--text3)">${c.progresso||0}%</span></td>
+        <td style="font-size:12px">${fmt(c.dataFine)}</td>
+        <td><div style="display:flex;gap:4px">
+          <button class="btn btn-secondary btn-sm" onclick="showPage('commesse','detail-${c._id}')">🔍</button>
+          <button class="btn btn-secondary btn-sm" onclick="openModal('commessa','${c._id}')">✏</button>
+          <button class="btn btn-danger btn-sm" onclick="doDelete('commesse','${c._id}')">✕</button>
+        </div></td>
+      </tr>`).join('')}</tbody>
+    </table>${!list.length ? empty('Nessuna commessa','') : ''}</div></div>
+  </div>`;
+}
+
+function rCommessaDetail(id) {
+  const c = DB.commesse.find(x=>x._id===id); if(!c) return rCommesse();
+  const cl=gC(c.clienteId), rsp=gT(c.responsabileId);
+  const tasks=DB.tasks.filter(t=>t.commessaId===id);
+  const note=DB.note.filter(n=>n.commessaId===id);
+  return `
+  <div class="page-header">
+    <div><div class="page-title">${c.codice} — ${c.titolo}</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary btn-sm" onclick="openModal('commessa','${c._id}')">✏ Modifica</button>
+      <button class="btn btn-primary btn-sm" onclick="openModal('task',null,'${c._id}')">+ Task</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="back-btn" onclick="showPage('commesse')">← Torna alle commesse</div>
+    <div class="detail-header">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div style="display:flex;gap:10px">${sBadge(c.stato)}${pBadge(c.priorita)}</div>
+        <div style="font-size:13px;color:var(--text2)">Importo: <strong style="color:var(--accent)">€ ${Number(c.importo||0).toLocaleString('it-IT')}</strong></div>
+      </div>
+      <div class="detail-grid">
+        <div class="detail-item"><label>Cliente</label><span>${cl.ragione}</span></div>
+        <div class="detail-item"><label>Responsabile</label><span>${rsp.nome}</span></div>
+        <div class="detail-item"><label>Data inizio</label><span>${fmt(c.dataInizio)}</span></div>
+        <div class="detail-item"><label>Data fine</label><span>${fmt(c.dataFine)}</span></div>
+        <div class="detail-item" style="grid-column:span 2"><label>Descrizione</label><span>${c.descrizione||'—'}</span></div>
+      </div>
+      <div style="margin-top:16px">
+        <label style="font-size:11px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:8px">Avanzamento — ${c.progresso||0}%</label>
+        <div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:${c.progresso||0}%"></div></div>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          ${[0,10,25,50,75,90,100].map(v=>`<button class="btn btn-secondary btn-sm" onclick="setProgresso('${c._id}',${v})">${v}%</button>`).join('')}
+          <button class="btn btn-secondary btn-sm" onclick="customProgresso('${c._id}')">…</button>
+        </div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Task (${tasks.length})</div><button class="btn btn-primary btn-sm" onclick="openModal('task',null,'${c._id}')">+ Nuovo task</button></div>
+        ${tasks.length ? `<table><thead><tr><th>Titolo</th><th>Assegnato</th><th>Stato</th><th>Scadenza</th><th></th></tr></thead><tbody>
+        ${tasks.map(t=>`<tr>
+          <td><span class="priority-dot p-${t.priorita=='Alta'?'alta':t.priorita=='Media'?'media':'bassa'}"></span>${t.titolo}</td>
+          <td style="font-size:12px">${gT(t.assegnatoId).nome}</td>
+          <td>${sBadge(t.stato)}</td>
+          <td style="font-size:12px">${fmt(t.scadenza)}</td>
+          <td><div style="display:flex;gap:4px">
+            <button class="btn btn-secondary btn-sm" onclick="openModal('task','${t._id}')">✏</button>
+            <button class="btn btn-secondary btn-sm" onclick="sendReminder('${t._id}')">📧</button>
+            <button class="btn btn-danger btn-sm" onclick="doDelete('tasks','${t._id}')">✕</button>
+          </div></td>
+        </tr>`).join('')}</tbody></table>` : empty('Nessun task','',true)}
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Note & SAL</div><button class="btn btn-primary btn-sm" onclick="openModal('nota',null,'${c._id}')">+ Nota</button></div>
+        ${note.length ? note.sort((a,b)=>new Date(b.data)-new Date(a.data)).map(n=>`
+          <div class="note-item">
+            <div class="note-header">
+              <div class="note-author">${n.autore}</div>
+              <div class="note-date">${fmt(n.data)} <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px" onclick="doDelete('note','${n._id}')">✕</button></div>
+            </div>
+            <div class="note-text">${n.testo}</div>
+          </div>`).join('')
+        : '<div class="empty-state" style="padding:30px"><p>Nessuna nota</p></div>'}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── TASKS ─────────────────────────────────────────────────
+function rTasks() {
+  const view  = window._taskView||'kanban';
+  const stati = ['Da fare','In corso','In revisione','Completato'];
+  return `
+  <div class="page-header">
+    <div><div class="page-title">Task</div><div class="page-subtitle">${DB.tasks.filter(t=>t.stato!='Completato').length} aperti</div></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div class="tabs" style="margin-bottom:0">
+        <div class="tab ${view==='kanban'?'active':''}" onclick="window._taskView='kanban';showPage('tasks')">Kanban</div>
+        <div class="tab ${view==='lista'?'active':''}" onclick="window._taskView='lista';showPage('tasks')">Lista</div>
+      </div>
+      <button class="btn btn-primary" onclick="openModal('task')">+ Nuovo task</button>
+    </div>
+  </div>
+  <div class="content">
+  ${view==='kanban' ? `<div class="kanban">${stati.map(s=>{
+    const t=DB.tasks.filter(x=>x.stato===s);
+    const col={'Da fare':'var(--accent)','In corso':'var(--accent4)','In revisione':'var(--text2)','Completato':'var(--accent2)'};
+    return `<div class="kanban-col">
+      <div class="kanban-col-header"><span style="color:${col[s]}">${s}</span><span class="kanban-count">${t.length}</span></div>
+      ${t.map(tk=>{
+        const d=dl(tk.scadenza); const dc=d!==null&&d<0?'var(--accent3)':d!==null&&d<=3?'var(--accent)':'var(--text3)';
+        return `<div class="kanban-card" onclick="openModal('task','${tk._id}')">
+          <div style="display:flex;gap:6px;margin-bottom:6px"><span class="priority-dot p-${tk.priorita=='Alta'?'alta':tk.priorita=='Media'?'media':'bassa'}"></span><div class="kanban-card-title">${tk.titolo}</div></div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:8px">${gCo(tk.commessaId).codice}</div>
+          <div class="kanban-card-meta">${av(gT(tk.assegnatoId).nome,'width:22px;height:22px;font-size:10px')}<span style="color:${dc}">${tk.scadenza?fmt(tk.scadenza):'—'}</span></div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('')}</div>`
+  : `<div class="card">
+    <div class="toolbar"><div class="search-box"><svg class="search-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" placeholder="Cerca…" oninput="filterTbl(this,'tbl-tasks')"></div></div>
+    <div class="table-wrap"><table id="tbl-tasks"><thead><tr><th>Titolo</th><th>Commessa</th><th>Assegnato</th><th>Priorità</th><th>Stato</th><th>Scadenza</th><th>Azioni</th></tr></thead><tbody>
+    ${DB.tasks.map(t=>{
+      const d=dl(t.scadenza); const dc=d!==null&&d<0?'var(--accent3)':d!==null&&d<=3?'var(--accent)':'var(--text2)';
+      return `<tr>
+        <td>${t.titolo}</td>
+        <td style="font-size:12px">${gCo(t.commessaId).codice}</td>
+        <td>${av(gT(t.assegnatoId).nome,'width:22px;height:22px;font-size:10px')} <span style="font-size:12px">${gT(t.assegnatoId).nome}</span></td>
+        <td>${pBadge(t.priorita)}</td><td>${sBadge(t.stato)}</td>
+        <td style="color:${dc};font-size:12px">${fmt(t.scadenza)}</td>
+        <td><div style="display:flex;gap:4px">
+          <button class="btn btn-secondary btn-sm" onclick="openModal('task','${t._id}')">✏</button>
+          <button class="btn btn-secondary btn-sm" onclick="sendReminder('${t._id}')">📧</button>
+          <button class="btn btn-danger btn-sm" onclick="doDelete('tasks','${t._id}')">✕</button>
+        </div></td>
+      </tr>`;
+    }).join('')}</tbody></table></div>
+  </div>`}
+  </div>`;
+}
+
+// ── TEAM ──────────────────────────────────────────────────
+function rTeam() {
+  return `
+  <div class="page-header">
+    <div><div class="page-title">Team</div><div class="page-subtitle">${DB.team.length} collaboratori</div></div>
+    <button class="btn btn-primary" onclick="openModal('team')">+ Aggiungi</button>
+  </div>
+  <div class="content">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px">
+    ${DB.team.map(m=>{
+      const tk=DB.tasks.filter(t=>t.assegnatoId===m._id&&t.stato!='Completato').length;
+      const co=[...new Set(DB.tasks.filter(t=>t.assegnatoId===m._id).map(t=>t.commessaId))].length;
+      return `<div class="card" style="transition:border-color .15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+          ${av(m.nome,'width:46px;height:46px;font-size:16px;flex-shrink:0')}
+          <div><div style="font-weight:600;font-size:15px">${m.nome}</div><div style="font-size:12px;color:var(--text3)">${m.ruolo||'—'}</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+          <div style="background:var(--surface2);border-radius:8px;padding:10px;text-align:center"><div style="font-family:'DM Serif Display',serif;font-size:22px">${tk}</div><div style="font-size:11px;color:var(--text3)">Task aperti</div></div>
+          <div style="background:var(--surface2);border-radius:8px;padding:10px;text-align:center"><div style="font-family:'DM Serif Display',serif;font-size:22px">${co}</div><div style="font-size:11px;color:var(--text3)">Commesse</div></div>
+        </div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:4px">📧 <a href="mailto:${m.email}" style="color:var(--accent4)">${m.email||'—'}</a></div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:14px">📞 ${m.telefono||'—'}</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-secondary btn-sm" style="flex:1" onclick="openModal('team','${m._id}')">Modifica</button>
+          <button class="btn btn-secondary btn-sm" onclick="sendReminderTeam('${m._id}')">📧</button>
+          <button class="btn btn-danger btn-sm" onclick="doDelete('team','${m._id}')">✕</button>
+        </div>
+      </div>`;
+    }).join('')}
+    </div>
+    ${!DB.team.length ? `<div class="card">${empty('Nessun collaboratore','Aggiungi il primo membro del team')}</div>` : ''}
+  </div>`;
+}
+
+// ── SCADENZE ──────────────────────────────────────────────
+function rScadenze() {
+  const tasks = DB.tasks.filter(t=>t.stato!='Completato'&&t.scadenza).sort((a,b)=>new Date(a.scadenza)-new Date(b.scadenza));
+  const sc = tasks.map(t=>({...t,d:dl(t.scadenza)}));
+  function row(t) {
+    const dc=t.d<0?'var(--accent3)':t.d===0?'var(--accent)':t.d<=3?'var(--accent)':'var(--text2)';
+    const lbl=t.d<0?`Scaduta ${Math.abs(t.d)}gg fa`:t.d===0?'Oggi':t.d===1?'Domani':`${t.d} gg`;
+    return `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)">
+      <span class="priority-dot p-${t.priorita=='Alta'?'alta':t.priorita=='Media'?'media':'bassa'}"></span>
+      <div style="flex:1"><div style="font-size:13px;font-weight:500">${t.titolo}</div>
+      <div style="font-size:11px;color:var(--text3)">${gCo(t.commessaId).codice} · ${gT(t.assegnatoId).nome}</div></div>
+      <div style="color:${dc};font-size:12px;font-weight:600;white-space:nowrap">${lbl}</div>
+      <button class="btn btn-secondary btn-sm" onclick="sendReminder('${t._id}')">📧</button>
+    </div>`;
+  }
+  function sec(title,items,color) {
+    if(!items.length) return '';
+    return `<div class="card" style="margin-bottom:16px;border-left:3px solid ${color}">
+      <div class="card-header"><div class="card-title" style="color:${color}">${title} (${items.length})</div>
+      <button class="btn btn-secondary btn-sm" onclick="sendBulk([${items.map(t=>`'${t._id}'`).join(',')}])">📧 Invia tutti</button></div>
+      ${items.map(row).join('')}
+    </div>`;
+  }
+  return `
+  <div class="page-header"><div><div class="page-title">Scadenze</div><div class="page-subtitle">Panoramica e promemoria email</div></div></div>
+  <div class="content">
+    ${sec('⚠ Scadute',sc.filter(t=>t.d<0),'var(--accent3)')}
+    ${sec('📌 Oggi',sc.filter(t=>t.d===0),'var(--accent)')}
+    ${sec('🔔 Prossimi 7 giorni',sc.filter(t=>t.d>0&&t.d<=7),'var(--accent4)')}
+    ${sec('📅 Prossime scadenze',sc.filter(t=>t.d>7),'var(--text3)')}
+    ${!tasks.length ? `<div class="card">${empty('Nessuna scadenza pendente','Tutti i task sono completati')}</div>` : ''}
+  </div>`;
+}
+
+// ── MODALS ────────────────────────────────────────────────
+window.openModal = function(type, id=null, parentId=null) {
+  const forms = { cliente:mCliente, commessa:mCommessa, task:mTask, team:mTeam, nota:mNota };
+  document.getElementById('modal-content').innerHTML = forms[type](id, parentId);
+  document.getElementById('modal-overlay').classList.add('open');
+};
+window.closeModal = function(e) { if(!e||e.target===document.getElementById('modal-overlay')) closeModalDirect(); };
+window.closeModalDirect = function() { document.getElementById('modal-overlay').classList.remove('open'); };
+
+function mCliente(id) {
+  const c = id ? DB.clienti.find(x=>x._id===id) : {};
+  return `<div class="modal-header"><div class="modal-title">${id?'Modifica':'Nuovo'} Cliente</div><button class="modal-close" onclick="closeModalDirect()">×</button></div>
+  <div class="modal-body">
+    <div class="form-row"><div class="form-group"><label>Ragione Sociale *</label><input id="f-ragione" value="${c.ragione||''}"></div><div class="form-group"><label>Referente</label><input id="f-referente" value="${c.referente||''}"></div></div>
+    <div class="form-row"><div class="form-group"><label>Email</label><input id="f-email" type="email" value="${c.email||''}"></div><div class="form-group"><label>Telefono</label><input id="f-tel" value="${c.telefono||''}"></div></div>
+    <div class="form-group"><label>Indirizzo</label><input id="f-ind" value="${c.indirizzo||''}"></div>
+    <div class="form-group"><label>Note</label><textarea id="f-note">${c.note||''}</textarea></div>
+    <div class="form-actions"><button class="btn btn-secondary" onclick="closeModalDirect()">Annulla</button><button class="btn btn-primary" onclick="saveCliente('${id||''}')">Salva</button></div>
+  </div>`;
+}
+function mCommessa(id) {
+  const c=id?DB.commesse.find(x=>x._id===id):{};
+  const co=DB.clienti.map(cl=>`<option value="${cl._id}" ${c.clienteId===cl._id?'selected':''}>${cl.ragione}</option>`).join('');
+  const to=DB.team.map(t=>`<option value="${t._id}" ${c.responsabileId===t._id?'selected':''}>${t.nome}</option>`).join('');
+  return `<div class="modal-header"><div class="modal-title">${id?'Modifica':'Nuova'} Commessa</div><button class="modal-close" onclick="closeModalDirect()">×</button></div>
+  <div class="modal-body">
+    <div class="form-row"><div class="form-group"><label>Codice *</label><input id="f-codice" value="${c.codice||''}"></div><div class="form-group"><label>Titolo *</label><input id="f-titolo" value="${c.titolo||''}"></div></div>
+    <div class="form-row"><div class="form-group"><label>Cliente</label><select id="f-cliente"><option value="">—</option>${co}</select></div><div class="form-group"><label>Responsabile</label><select id="f-resp"><option value="">—</option>${to}</select></div></div>
+    <div class="form-row"><div class="form-group"><label>Stato</label><select id="f-stato"><option ${c.stato=='In corso'?'selected':''}>In corso</option><option ${c.stato=='Pianificato'?'selected':''}>Pianificato</option><option ${c.stato=='Completato'?'selected':''}>Completato</option><option ${c.stato=='Sospeso'?'selected':''}>Sospeso</option></select></div><div class="form-group"><label>Priorità</label><select id="f-priorita"><option ${c.priorita=='Alta'?'selected':''}>Alta</option><option ${c.priorita=='Media'?'selected':''}>Media</option><option ${c.priorita=='Bassa'?'selected':''}>Bassa</option></select></div></div>
+    <div class="form-row"><div class="form-group"><label>Data inizio</label><input id="f-dinizio" type="date" value="${c.dataInizio||''}"></div><div class="form-group"><label>Data fine</label><input id="f-dfine" type="date" value="${c.dataFine||''}"></div></div>
+    <div class="form-group"><label>Importo (€)</label><input id="f-importo" type="number" value="${c.importo||''}"></div>
+    <div class="form-group"><label>Descrizione</label><textarea id="f-desc">${c.descrizione||''}</textarea></div>
+    <div class="form-actions"><button class="btn btn-secondary" onclick="closeModalDirect()">Annulla</button><button class="btn btn-primary" onclick="saveCommessa('${id||''}')">Salva</button></div>
+  </div>`;
+}
+function mTask(id, parentId=null) {
+  const t=id?DB.tasks.find(x=>x._id===id):{};
+  const co=DB.commesse.map(c=>`<option value="${c._id}" ${(t.commessaId||parentId)===c._id?'selected':''}>${c.codice} — ${c.titolo}</option>`).join('');
+  const to=DB.team.map(m=>`<option value="${m._id}" ${t.assegnatoId===m._id?'selected':''}>${m.nome}</option>`).join('');
+  return `<div class="modal-header"><div class="modal-title">${id?'Modifica':'Nuovo'} Task</div><button class="modal-close" onclick="closeModalDirect()">×</button></div>
+  <div class="modal-body">
+    <div class="form-group"><label>Titolo *</label><input id="f-titolo" value="${t.titolo||''}"></div>
+    <div class="form-row"><div class="form-group"><label>Commessa</label><select id="f-commessa"><option value="">—</option>${co}</select></div><div class="form-group"><label>Assegnato a</label><select id="f-assegnato"><option value="">—</option>${to}</select></div></div>
+    <div class="form-row"><div class="form-group"><label>Stato</label><select id="f-stato"><option ${t.stato=='Da fare'?'selected':''}>Da fare</option><option ${t.stato=='In corso'?'selected':''}>In corso</option><option ${t.stato=='In revisione'?'selected':''}>In revisione</option><option ${t.stato=='Completato'?'selected':''}>Completato</option></select></div><div class="form-group"><label>Priorità</label><select id="f-priorita"><option ${t.priorita=='Alta'?'selected':''}>Alta</option><option ${t.priorita=='Media'?'selected':''}>Media</option><option ${t.priorita=='Bassa'?'selected':''}>Bassa</option></select></div></div>
+    <div class="form-group"><label>Scadenza</label><input id="f-scadenza" type="date" value="${t.scadenza||''}"></div>
+    <div class="form-group"><label>Descrizione</label><textarea id="f-desc">${t.descrizione||''}</textarea></div>
+    <div class="form-actions"><button class="btn btn-secondary" onclick="closeModalDirect()">Annulla</button>${id?`<button class="btn btn-secondary" onclick="sendReminder('${id}');closeModalDirect()">📧 Reminder</button>`:''}<button class="btn btn-primary" onclick="saveTask('${id||''}')">Salva</button></div>
+  </div>`;
+}
+function mTeam(id) {
+  const m=id?DB.team.find(x=>x._id===id):{};
+  return `<div class="modal-header"><div class="modal-title">${id?'Modifica':'Nuovo'} Collaboratore</div><button class="modal-close" onclick="closeModalDirect()">×</button></div>
+  <div class="modal-body">
+    <div class="form-row"><div class="form-group"><label>Nome Cognome *</label><input id="f-nome" value="${m.nome||''}"></div><div class="form-group"><label>Ruolo</label><input id="f-ruolo" value="${m.ruolo||''}"></div></div>
+    <div class="form-row"><div class="form-group"><label>Email *</label><input id="f-email" type="email" value="${m.email||''}"></div><div class="form-group"><label>Telefono</label><input id="f-tel" value="${m.telefono||''}"></div></div>
+    <div class="form-actions"><button class="btn btn-secondary" onclick="closeModalDirect()">Annulla</button><button class="btn btn-primary" onclick="saveTeam('${id||''}')">Salva</button></div>
+  </div>`;
+}
+function mNota(id, commessaId) {
+  const to=DB.team.map(m=>`<option>${m.nome}</option>`).join('');
+  return `<div class="modal-header"><div class="modal-title">Nuova Nota / SAL</div><button class="modal-close" onclick="closeModalDirect()">×</button></div>
+  <div class="modal-body">
+    <div class="form-group"><label>Autore</label><select id="f-autore"><option value="">—</option>${to}</select></div>
+    <div class="form-group"><label>Testo *</label><textarea id="f-testo" style="min-height:120px" placeholder="Stato avanzamento, problematiche, aggiornamenti…"></textarea></div>
+    <div class="form-actions"><button class="btn btn-secondary" onclick="closeModalDirect()">Annulla</button><button class="btn btn-primary" onclick="saveNota('${commessaId}')">Salva nota</button></div>
+  </div>`;
+}
+
+// ── SAVE ──────────────────────────────────────────────────
+window.saveCliente = async function(id) {
+  const r=g('f-ragione'); if(!r) return alert('Ragione sociale obbligatoria');
+  const o={ragione:r,referente:g('f-referente'),email:g('f-email'),telefono:g('f-tel'),indirizzo:g('f-ind'),note:g('f-note')};
+  id ? await updItem('clienti',id,o) : await addItem('clienti',o);
+  closeModalDirect();
+};
+window.saveCommessa = async function(id) {
+  const codice=g('f-codice'),titolo=g('f-titolo'); if(!codice||!titolo) return alert('Codice e titolo obbligatori');
+  const prog=id?(DB.commesse.find(c=>c._id===id)?.progresso||0):0;
+  const o={codice,titolo,clienteId:g('f-cliente')||null,responsabileId:g('f-resp')||null,stato:g('f-stato')||'In corso',priorita:g('f-priorita')||'Media',dataInizio:g('f-dinizio'),dataFine:g('f-dfine'),importo:g('f-importo'),descrizione:g('f-desc'),progresso:prog};
+  id ? await updItem('commesse',id,o) : await addItem('commesse',o);
+  closeModalDirect();
+};
+window.saveTask = async function(id) {
+  const titolo=g('f-titolo'); if(!titolo) return alert('Titolo obbligatorio');
+  const o={titolo,commessaId:g('f-commessa')||null,assegnatoId:g('f-assegnato')||null,stato:g('f-stato')||'Da fare',priorita:g('f-priorita')||'Media',scadenza:g('f-scadenza'),descrizione:g('f-desc')};
+  id ? await updItem('tasks',id,o) : await addItem('tasks',o);
+  closeModalDirect();
+};
+window.saveTeam = async function(id) {
+  const nome=g('f-nome'); if(!nome) return alert('Nome obbligatorio');
+  const o={nome,ruolo:g('f-ruolo'),email:g('f-email'),telefono:g('f-tel')};
+  id ? await updItem('team',id,o) : await addItem('team',o);
+  closeModalDirect();
+};
+window.saveNota = async function(commessaId) {
+  const testo=g('f-testo'); if(!testo) return alert('Testo obbligatorio');
+  await addItem('note',{commessaId,autore:g('f-autore')||'Anonimo',testo,data:new Date().toISOString().slice(0,10)});
+  closeModalDirect();
+};
+window.doDelete = async function(col,id) {
+  if(!confirm('Eliminare questo elemento?')) return;
+  await delItem(col,id);
+};
+window.setProgresso = async function(id,val) { await updItem('commesse',id,{progresso:val}); };
+window.customProgresso = async function(id) {
+  const val=prompt('Percentuale (0-100):');
+  if(val!==null) await updItem('commesse',id,{progresso:Math.max(0,Math.min(100,parseInt(val)||0))});
+};
+
+// ── EMAIL ─────────────────────────────────────────────────
+window.sendReminder = function(taskId) {
+  const t=DB.tasks.find(x=>x._id===taskId); if(!t) return;
+  const m=gT(t.assegnatoId), c=gCo(t.commessaId), d=dl(t.scadenza);
+  const urg=d<0?'⚠ SCADUTO':d===0?'📌 SCADE OGGI':d<=3?'🔔 Urgente':'📅 Promemoria';
+  const sub=encodeURIComponent(`${urg} — ${t.titolo} [${c.codice}]`);
+  const body=encodeURIComponent(`Gentile ${m.nome},\n\nPromemoria task:\n\n📋 TASK: ${t.titolo}\n🏗 COMMESSA: ${c.codice} — ${c.titolo}\n📅 SCADENZA: ${fmt(t.scadenza)}\n⚡ PRIORITÀ: ${t.priorita}\n📊 STATO: ${t.stato}\n\n${t.descrizione?`NOTE:\n${t.descrizione}\n\n`:''}${d<0?`⚠ Scaduto da ${Math.abs(d)} giorni.`:d===0?`📌 Scade OGGI.`:`🔔 Scade tra ${d} giorni.`}\n\nCordiali saluti,\nStudio Tecnico — Gestionale Progetti`);
+  window.location.href=`mailto:${m.email||''}?subject=${sub}&body=${body}`;
+};
+window.sendReminderTeam = function(memberId) {
+  const m=DB.team.find(x=>x._id===memberId); if(!m) return;
+  const tasks=DB.tasks.filter(t=>t.assegnatoId===memberId&&t.stato!='Completato');
+  if(!tasks.length){ alert(`${m.nome} non ha task aperti.`); return; }
+  const sub=encodeURIComponent(`Riepilogo task assegnati — ${m.nome}`);
+  const body=encodeURIComponent(`Gentile ${m.nome},\n\nRiepilogo task aperti:\n\n${tasks.map(t=>`• ${t.titolo} [${gCo(t.commessaId).codice}]\n  Stato: ${t.stato} | Scadenza: ${fmt(t.scadenza)}`).join('\n\n')}\n\nCordiali saluti,\nStudio Tecnico`);
+  window.location.href=`mailto:${m.email}?subject=${sub}&body=${body}`;
+};
+window.sendBulk = function(ids) {
+  ids.forEach((id,i)=>setTimeout(()=>sendReminder(id),i*700));
+};
+
+// ── UTILS ─────────────────────────────────────────────────
+window.filterTbl = function(input,tableId) {
+  const val=input.value.toLowerCase();
+  document.getElementById(tableId)?.querySelectorAll('tbody tr').forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(val)?'':'none';});
+};
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModalDirect(); });
+</script>
+</body>
+</html>
